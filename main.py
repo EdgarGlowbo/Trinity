@@ -33,6 +33,9 @@ class CancionFormWindow(QMainWindow):
             subgenero = self.ui.subComboBox.currentText()
             duracion = str(self.ui.duracionSpinBox.value())
             letra = self.ui.textEdit.toPlainText()
+
+            if len(titulo) == 0 or len(artista) == 0 or len(letra) == 0:
+                raise Exception("Debes llenar todos los campos")
             # Crear instancia de Cancion
             cancion = Cancion(titulo, artista, genero, subgenero, duracion, letra)
             # Crea archivo con el título de la canción en la ruta especificada
@@ -79,6 +82,40 @@ class VentanaPrincipal(QMainWindow):
         self.ui.addSongBtn.clicked.connect(self.openCancionFormWindow)
         # Abre DetallesWindow cuando se clickea el botón Ver detalles
         self.ui.detailsBtn.clicked.connect(self.openDetallesWindow)
+        self.ui.searchBtn.clicked.connect(lambda: self.buscar_cancion(self.ui.searchBar.text()))
+
+
+    def buscar_cancion(self, nombre):
+        try:
+            if len(nombre) == 0:
+                raise Exception("Debes colocar al menos un caracter")
+            file_dir = os.path.dirname(os.path.realpath('__file__'))            
+            playlist_dir = os.path.join(file_dir, "playlists")
+            playlists = os.listdir(playlist_dir)
+            # Itera por cada archivo en la carpeta playlists
+            for playlist in playlists:
+                playlist_file = os.path.join(file_dir, f"playlists\{playlist}")
+                archivo = open(playlist_file, 'r')
+                lineas = archivo.readlines()
+                for i in range(0, len(lineas)):
+                    if nombre in lineas[i]:
+                        self.ui.electronicList.clearSelection()
+                        self.ui.hiphopList.clearSelection()
+                        self.ui.jazzList.clearSelection()
+                        self.ui.popList.clearSelection()                                                                
+                        if playlist == "Electrónica":
+                            self.ui.electronicList.setCurrentRow(i)                            
+                        elif playlist == "Hip-Hop":
+                            self.ui.hiphopList.setCurrentRow(i)                            
+                        elif playlist == "Jazz":
+                            self.ui.jazzList.setCurrentRow(i)                            
+                        elif playlist == "Pop":
+                            self.ui.popList.setCurrentRow(i)                            
+                        break
+            self.ui.searchBar.clear()
+            self.ui.statusbar.showMessage('Canción encontrada exitosamente')  
+        except:
+            self.ui.statusbar.showMessage('Canción no encontrada')              
 
     def openCancionFormWindow(self):
         self.form.show()
@@ -195,10 +232,7 @@ class Subgenero(Genero):
 class Playlist:
     def __init__(self, window, genero):                     
         self.form = window.form.ui
-        self.genero = genero
-
-    def buscar_cancion(self, nombre):
-        pass    
+        self.genero = genero          
 
     def recuperar_canciones(self):
         return self.canciones
