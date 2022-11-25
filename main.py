@@ -18,11 +18,44 @@ class CancionFormWindow(QMainWindow):
     def __init__(self, parent=None):
         super(CancionFormWindow, self).__init__(parent)
         self.ui = Form()
-        self.ui.setupUi(self)        
-        self.ui.genComboBox.currentIndexChanged.connect(self.anadir_cancion_event)                                                       
-             
+        self.ui.setupUi(self)                                                                   
+        self.ui.addSongBtn.clicked.connect(self.anadir_cancion)
+        
         # Agrega al genComboBox los 4 géneros
         self.ui.genComboBox.addItems(['Electrónica', 'Jazz', 'Pop', 'Hip-Hop'])
+
+    def anadir_cancion(self):
+        try:        
+            # Guarda en variables info del form
+            titulo = self.ui.tituloDeLaCancionLineEdit.text()
+            artista = self.ui.artistaLineEdit.text()
+            genero = self.ui.genComboBox.currentText()
+            subgenero = self.ui.subComboBox.currentText()
+            duracion = str(self.ui.duracionSpinBox.value())
+            letra = self.ui.textEdit.toPlainText()
+            # Crear instancia de Cancion
+            cancion = Cancion(titulo, artista, genero, subgenero, duracion, letra)
+            # Crea archivo con el título de la canción en la ruta especificada
+            # Regresa la ruta donde se está ejecutando el código
+            file_dir = os.path.dirname(os.path.realpath('__file__'))
+            # Une la ruta con el titulo de la canción
+            
+            file_name = os.path.join(file_dir, f"canciones\{titulo}")            
+            archivo = open(file_name, 'w')
+            archivo.write(cancion.recuperar_datos())
+            archivo.close()
+            # Añade línea al archivo del género elegido
+            file_name_playlist = os.path.join(file_dir, f"playlists\{genero}") 
+            playlistArchivo = open(file_name_playlist, 'a')
+            playlistArchivo.write(cancion.nombre + " - " + cancion.artista + "\n")            
+            playlistArchivo.close()
+            # Actualiza las listas en MainWindow
+            generos[self.ui.genComboBox.currentIndex()].genero.asignar_playlist()        
+            self.limpiarForm()        
+            self.ui.statusbar.showMessage("Canción agregada exitosamente")
+
+        except:
+            self.ui.statusbar.showMessage("Error al añadir la canción")
 
     
     def limpiarForm(self):
@@ -31,15 +64,9 @@ class CancionFormWindow(QMainWindow):
         self.ui.duracionSpinBox.setValue(0.0)
         self.ui.textEdit.clear()
         self.ui.tituloDeLaCancionLineEdit.setFocus()
-
-    def anadir_cancion_event(self, index):
-        if len(generos) > 0:            
-            self.ui.addSongBtn.clicked.connect(generos[index].anadir_cancion)
             
     
     
-
-
 class VentanaPrincipal(QMainWindow):
     def __init__(self, parent=None):
         super(VentanaPrincipal, self).__init__(parent)
@@ -118,6 +145,8 @@ class Genero:
         self.asignar_playlist()
         if len(generos) > 0:
             self.asignar_subgeneros(0)
+
+        
         # Hace que los items de subgenComboBox cambien cuando cambia el index de genComboBox
         self.form.genComboBox.currentIndexChanged.connect(self.asignar_subgeneros)         
 
@@ -166,42 +195,7 @@ class Subgenero(Genero):
 class Playlist:
     def __init__(self, window, genero):                     
         self.form = window.form.ui
-        self.genero = genero                
-            
-    def anadir_cancion(self):
-        try:
-            # Guarda en variables info del form
-            titulo = self.form.tituloDeLaCancionLineEdit.text()
-            artista = self.form.artistaLineEdit.text()
-            genero = self.form.genComboBox.currentText()
-            subgenero = self.form.subComboBox.currentText()
-            duracion = str(self.form.duracionSpinBox.value())
-            letra = self.form.textEdit.toPlainText()
-            # Crear instancia de Cancion
-            cancion = Cancion(titulo, artista, genero, subgenero, duracion, letra)
-            # Crea archivo con el título de la canción en la ruta especificada
-            # Regresa la ruta donde se está ejecutando el código
-            file_dir = os.path.dirname(os.path.realpath('__file__'))
-            # Une la ruta con el titulo de la canción
-            if titulo != '':
-                file_name = os.path.join(file_dir, f"canciones\{titulo}")            
-                archivo = open(file_name, 'w')
-                archivo.write(cancion.recuperar_datos())
-                archivo.close()
-                # Añade línea al archivo del género elegido
-                file_name_playlist = os.path.join(file_dir, f"playlists\{genero}") 
-                playlistArchivo = open(file_name_playlist, 'a')
-                playlistArchivo.write(cancion.nombre + " - " + cancion.artista + "\n")            
-                playlistArchivo.close()
-                # Actualiza las listas en MainWindow
-                self.genero.asignar_playlist()
-                # Llama al método limpiarForm de la instancia self.form de CancionFormWindow
-                window.form.limpiarForm()        
-                self.form.statusbar.showMessage("Canción agregada exitosamente")
-
-        except:
-            self.form.statusbar.showMessage("Error al añadir la canción")
-
+        self.genero = genero
 
     def buscar_cancion(self, nombre):
         pass    
