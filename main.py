@@ -1,11 +1,65 @@
 import os
 from CancionFormWindow import Ui_MainWindow as Form
 from DetallesWindow import Ui_MainWindow as Details
+from ArtistaFormWindow import Ui_MainWindow as ArtistaForm
 from MainWindow import Ui_MainWindow as Homepage
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 # Variable global que almacena las instancias de los géneros
 generos = []
+
+class ArtistaWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super(ArtistaWindow, self).__init__(parent)
+        self.ui = ArtistaForm()
+        # self.form = CancionFormWindow().ui
+        self.ui.setupUi(self)
+         # Agrega al genComboBox los 4 géneros
+        self.ui.genComboBox.addItems(['Electrónica', 'Jazz', 'Pop', 'Hip-Hop'])
+        self.ui.clearArtistaFormBtn.clicked.connect(self.limpiarForm)
+        self.ui.addArtistaBtn.clicked.connect(self.anadir_artista)
+        
+    def anadir_artista(self):
+        try:        
+            # Guarda en variables info del form
+            nombre = self.ui.nombreArtistaLineEdit.text()
+            seudonimo = self.ui.seudonimoLineEdit.text()
+            nacionalidad = self.ui.nacionalidadLineEdit.text()
+            nacimiento = self.ui.nacimientoLineEdit.text()
+            genero = self.ui.genComboBox.currentText()
+            sencillos = self.ui.sencillosLineEdit.text()
+
+            if len(nombre) == 0 or len(seudonimo) == 0 or len(nacionalidad) == 0 or len(nacimiento) == 0 or len(sencillos) == 0:
+                raise Exception("Debes llenar todos los campos")
+            # Crear instancia de Artista
+            artista = Artista(nombre, seudonimo, nacimiento, nacionalidad, genero, sencillos)
+            # Crea archivo con el seudonimo en la ruta especificada
+            # Regresa la ruta donde se está ejecutando el código
+            file_dir = os.path.dirname(os.path.realpath('__file__'))
+            # Une la ruta
+            file_name = os.path.join(file_dir, f"artistas\{seudonimo}")            
+            archivo = open(file_name, 'w')
+            archivo.write(artista.recuperar_datos())
+            archivo.close()
+            # Añade línea al archivo Artistas
+            file_name_artista = os.path.join(file_dir, f"artistas\Artistas") 
+            artistaArchivo = open(file_name_artista, 'a')
+            artistaArchivo.write(artista.seudonimo + "\n")                       
+            artistaArchivo.close()            
+            # self.form.artistaComboBox.clear()                                    
+            # self.form.artistaComboBox.addItems(lineas)
+            self.limpiarForm()        
+            self.ui.statusbar.showMessage("Artista agregado exitosamente")
+        except:
+            self.ui.statusbar.showMessage("Error al añadir el artista")
+
+    def limpiarForm(self):
+        self.ui.nombreArtistaLineEdit.clear()
+        self.ui.seudonimoLineEdit.clear()
+        self.ui.nacionalidadLineEdit.clear()
+        self.ui.nacimientoLineEdit.clear()
+        self.ui.sencillosLineEdit.clear()        
+        self.ui.nombreArtistaLineEdit.setFocus()
 
 class DetallesWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -19,22 +73,24 @@ class CancionFormWindow(QMainWindow):
         super(CancionFormWindow, self).__init__(parent)
         self.ui = Form()
         self.ui.setupUi(self)                                                                   
-        self.ui.addSongBtn.clicked.connect(self.anadir_cancion)
-        
+        self.ui.addSongBtn.clicked.connect(self.anadir_cancion)        
         # Agrega al genComboBox los 4 géneros
         self.ui.genComboBox.addItems(['Electrónica', 'Jazz', 'Pop', 'Hip-Hop'])
+        self.artista = ArtistaWindow(self)
+        self.ui.addArtistBtn.clicked.connect(self.openArtistaWindow)
+        self.asignar_artistas()
 
     def anadir_cancion(self):
         try:        
             # Guarda en variables info del form
             titulo = self.ui.tituloDeLaCancionLineEdit.text()
-            artista = self.ui.artistaLineEdit.text()
+            artista = self.ui.artistaComboBox.currentText()
             genero = self.ui.genComboBox.currentText()
             subgenero = self.ui.subComboBox.currentText()
             duracion = str(self.ui.duracionSpinBox.value())
             letra = self.ui.textEdit.toPlainText()
 
-            if len(titulo) == 0 or len(artista) == 0 or len(letra) == 0:
+            if len(titulo) == 0 or len(artista) == 0 or len(letra) == 0 or genero == None:
                 raise Exception("Debes llenar todos los campos")
             # Crear instancia de Cancion
             cancion = Cancion(titulo, artista, genero, subgenero, duracion, letra)
@@ -60,15 +116,24 @@ class CancionFormWindow(QMainWindow):
         except:
             self.ui.statusbar.showMessage("Error al añadir la canción")
 
+    def asignar_artistas(self):
+        file_dir = os.path.dirname(os.path.realpath('__file__'))
+        # Añade línea al archivo Artistas
+        file_name_artista = os.path.join(file_dir, f"artistas\Artistas")
+        artistaArchivo = open(file_name_artista, 'r')
+        lineas = artistaArchivo.readlines()
+        artistaArchivo.close()            
+        self.ui.artistaComboBox.clear()                                    
+        self.ui.artistaComboBox.addItems(lineas)
     
     def limpiarForm(self):
-        self.ui.tituloDeLaCancionLineEdit.clear()
-        self.ui.artistaLineEdit.clear()
+        self.ui.tituloDeLaCancionLineEdit.clear()        
         self.ui.duracionSpinBox.setValue(0.0)
         self.ui.textEdit.clear()
         self.ui.tituloDeLaCancionLineEdit.setFocus()
             
-    
+    def openArtistaWindow(self):
+        self.artista.show()
     
 class VentanaPrincipal(QMainWindow):
     def __init__(self, parent=None):
@@ -83,6 +148,7 @@ class VentanaPrincipal(QMainWindow):
         # Abre DetallesWindow cuando se clickea el botón Ver detalles
         self.ui.detailsBtn.clicked.connect(self.openDetallesWindow)
         self.ui.searchBtn.clicked.connect(lambda: self.buscar_cancion(self.ui.searchBar.text()))
+        
 
 
     def buscar_cancion(self, nombre):
@@ -123,7 +189,7 @@ class VentanaPrincipal(QMainWindow):
     def openDetallesWindow(self):
         self.details.show()
 
-
+    
 class Cancion:
     def __init__(self,  nombre, artista, genero, subgenero, duracion,letra):
         self.nombre = nombre
@@ -238,6 +304,39 @@ class Playlist:
         return self.canciones
 
 
+class Artista:
+    def __init__(self, nombre, seudonimo, nacimiento, nacionalidad, genero, sencillos):
+        self.nombre = nombre
+        self.seudonimo = seudonimo
+        self.nacimiento = nacimiento
+        self.genero = genero
+        self.nacionalidad = nacionalidad
+        self.sencillos = sencillos
+
+    def asignar_nombre(self, nombre):
+        self.nombre = nombre
+    def asignar_seudonimo(self, seudonimo):
+        self.seudonimo = seudonimo
+    def asignar_nacimiento(self, nacimiento):
+        self.nacimiento = nacimiento
+    def asignar_nacionalidad(self, nacionalidad):
+        self.nacionalidad = nacionalidad
+    def asignar_sencillos(self, sencillos):
+        self.sencillos = sencillos
+    def recuperar_nombre(self):
+        return self.nombre
+    def recuperar_seudonimo(self):
+        return self.seudonimo
+    def recuperar_nacimiento(self):
+        return self.nacimiento
+    def recuperar_nacionalidad(self):
+        return self.nacionalidad
+    def recuperar_sencillos(self):
+        return self.sencillos
+    def recuperar_datos(self):
+        return self.nombre + "$" + self.seudonimo + "$" + self.nacimiento + "$" + self.nacionalidad + "$" + self.sencillos + "$" + self.genero
+
+
 # main method
 if __name__ == '__main__':    
 
@@ -253,7 +352,3 @@ if __name__ == '__main__':
     generos.append(Playlist(window, Genero('Hip-Hop', ['Trap'], window)))
     
     sys.exit(app.exec())
-
-    
-
-        
