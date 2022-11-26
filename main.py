@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 
 # Variable global que almacena las instancias de los géneros
 generos = []
+seleccionGlobal = None
 
 class ArtistaWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -66,6 +67,45 @@ class DetallesWindow(QMainWindow):
         super(DetallesWindow, self).__init__(parent)
         self.ui = Details()
         self.ui.setupUi(self)
+        self.setupContenido()
+        self.ui.closeDetailsBtn.clicked.connect(self.cerrarVentana)
+        
+    def setupContenido(self):
+        if seleccionGlobal is not None:
+            cancion = seleccionGlobal.split()[0]            
+            # Pone el título de la canción
+            self.ui.songTitleLabel.setText(cancion)                      
+            file_dir = os.path.dirname(os.path.realpath('__file__'))
+            file_name_cancion = os.path.join(file_dir, f"canciones\{cancion}")
+            archivoCancion = open(file_name_cancion, 'r')
+            cancionInfo = archivoCancion.readline().split("$")
+            letra = cancionInfo[-1]
+            subgenero = cancionInfo[-3]
+            artista = cancionInfo[1]
+            # Pone la letra
+            self.ui.letraTextEdit.setPlainText(letra)
+            # Pone el título de subgénero
+            self.ui.subgenLabel.setText(subgenero)
+            # Pone el artista en el título
+            self.ui.artistaLabel.setText(artista)  
+            archivoCancion.close()
+            file_name_sub = os.path.join(file_dir, f"subgéneros\{subgenero}")
+            archivoSub = open(file_name_sub, 'r')
+            historia = archivoSub.readline()
+            # Pone la historia del subgen
+            self.ui.historiaTextEdit.setPlainText(historia)
+            archivoSub.close()
+            # Pone los detalles del artista
+            file_name_artista = os.path.join(file_dir, f"artistas\{artista}")
+            archivoArtista = open(file_name_artista, 'r')
+            lineas = archivoArtista.readline().split("$")
+            for linea in lineas:
+                self.ui.artistaTextEdit.append(linea)
+            archivoArtista.close()
+
+
+    def cerrarVentana(self):
+        self.close()
 
 
 class CancionFormWindow(QMainWindow):
@@ -77,8 +117,7 @@ class CancionFormWindow(QMainWindow):
         # Agrega al genComboBox los 4 géneros
         self.ui.genComboBox.addItems(['Electrónica', 'Jazz', 'Pop', 'Hip-Hop'])
         self.artista = ArtistaWindow(self)
-        self.ui.addArtistBtn.clicked.connect(self.openArtistaWindow)
-        self.asignar_artistas()
+        self.ui.addArtistBtn.clicked.connect(self.openArtistaWindow)        
 
     def anadir_cancion(self):
         try:        
@@ -106,7 +145,7 @@ class CancionFormWindow(QMainWindow):
             # Añade línea al archivo del género elegido
             file_name_playlist = os.path.join(file_dir, f"playlists\{genero}") 
             playlistArchivo = open(file_name_playlist, 'a')
-            playlistArchivo.write(cancion.nombre + " - " + cancion.artista + "\n")            
+            playlistArchivo.write(cancion.nombre + " - " + cancion.artista + cancion.duracion +  " min" + "\n")            
             playlistArchivo.close()
             # Actualiza las listas en MainWindow
             generos[self.ui.genComboBox.currentIndex()].genero.asignar_playlist()        
@@ -133,7 +172,7 @@ class CancionFormWindow(QMainWindow):
         self.ui.tituloDeLaCancionLineEdit.setFocus()
             
     def openArtistaWindow(self):
-        self.artista.show()
+        self.artista.show()        
     
 class VentanaPrincipal(QMainWindow):
     def __init__(self, parent=None):
@@ -148,8 +187,50 @@ class VentanaPrincipal(QMainWindow):
         # Abre DetallesWindow cuando se clickea el botón Ver detalles
         self.ui.detailsBtn.clicked.connect(self.openDetallesWindow)
         self.ui.searchBtn.clicked.connect(lambda: self.buscar_cancion(self.ui.searchBar.text()))
-        
 
+        self.ui.electronicList.itemSelectionChanged.connect(self.selectionChangedElec)
+        self.ui.jazzList.itemSelectionChanged.connect(self.selectionChangedJazz)
+        self.ui.hiphopList.itemSelectionChanged.connect(self.selectionChangedHiphop)
+        self.ui.popList.itemSelectionChanged.connect(self.selectionChangedPop)
+
+
+    def selectionChangedElec(self):    
+        elecItem = self.ui.electronicList.currentItem()     
+        if elecItem is not None:
+            global seleccionGlobal            
+            self.ui.hiphopList.clearSelection()
+            self.ui.jazzList.clearSelection()
+            self.ui.popList.clearSelection()   
+            seleccionGlobal = elecItem.text()
+                
+        
+    def selectionChangedJazz(self):            
+        jazzItem = self.ui.jazzList.currentItem()              
+        if jazzItem is not None:
+            global seleccionGlobal
+            self.ui.electronicList.clearSelection()
+            self.ui.hiphopList.clearSelection()            
+            self.ui.popList.clearSelection()   
+            seleccionGlobal = jazzItem.text()        
+
+    def selectionChangedHiphop(self):                    
+        hiphopItem = self.ui.hiphopList.currentItem()                
+        if hiphopItem is not None:
+            global seleccionGlobal
+            self.ui.electronicList.clearSelection()            
+            self.ui.jazzList.clearSelection()
+            self.ui.popList.clearSelection() 
+            seleccionGlobal = hiphopItem.text()
+            
+
+    def selectionChangedPop(self):    
+        popItem = self.ui.popList.currentItem()
+        if popItem is not None:
+            global seleccionGlobal
+            self.ui.electronicList.clearSelection()
+            self.ui.hiphopList.clearSelection()
+            self.ui.jazzList.clearSelection()            
+            seleccionGlobal = popItem.text()        
 
     def buscar_cancion(self, nombre):
         try:
@@ -185,9 +266,17 @@ class VentanaPrincipal(QMainWindow):
 
     def openCancionFormWindow(self):
         self.form.show()
+        self.form.asignar_artistas()
 
     def openDetallesWindow(self):
-        self.details.show()
+        try:
+            global seleccionGlobal
+            if seleccionGlobal is None:
+                raise Exception("Debes seleccionar una canción")
+            self.details.show()
+            self.details.setupContenido()
+        except:
+            self.ui.statusbar.showMessage("Selecciona una canción") 
 
     
 class Cancion:
