@@ -79,7 +79,7 @@ class DetallesWindow(QMainWindow):
             file_name_cancion = os.path.join(file_dir, f"canciones\{cancion}")
             archivoCancion = open(file_name_cancion, 'r')
             cancionInfo = archivoCancion.readline().split("$")
-            letra = cancionInfo[-1]
+            letra = cancionInfo[-1]            
             subgenero = cancionInfo[-3]
             artista = cancionInfo[1]
             # Pone la letra
@@ -91,7 +91,8 @@ class DetallesWindow(QMainWindow):
             archivoCancion.close()
             file_name_sub = os.path.join(file_dir, f"subgéneros\{subgenero}")
             archivoSub = open(file_name_sub, 'r')
-            historia = archivoSub.readline()
+            historia = archivoSub.read()
+            historia = historia.replace('\n', ' ').replace('\r', '')
             # Pone la historia del subgen
             self.ui.historiaTextEdit.setPlainText(historia)
             archivoSub.close()
@@ -120,7 +121,7 @@ class CancionFormWindow(QMainWindow):
         self.ui.addArtistBtn.clicked.connect(self.openArtistaWindow)        
 
     def anadir_cancion(self):
-        try:        
+        # try:        
             # Guarda en variables info del form
             titulo = self.ui.tituloDeLaCancionLineEdit.text()
             artista = self.ui.artistaComboBox.currentText()
@@ -128,6 +129,8 @@ class CancionFormWindow(QMainWindow):
             subgenero = self.ui.subComboBox.currentText()
             duracion = str(self.ui.duracionSpinBox.value())
             letra = self.ui.textEdit.toPlainText()
+            artista = artista.replace('\n', ' ').replace('\r', '')
+            letra = letra.replace('\n', ' ').replace('\r', '')
 
             if len(titulo) == 0 or len(artista) == 0 or len(letra) == 0 or genero == None:
                 raise Exception("Debes llenar todos los campos")
@@ -144,16 +147,16 @@ class CancionFormWindow(QMainWindow):
             archivo.close()
             # Añade línea al archivo del género elegido
             file_name_playlist = os.path.join(file_dir, f"playlists\{genero}") 
-            playlistArchivo = open(file_name_playlist, 'a')
-            playlistArchivo.write(cancion.nombre + " - " + cancion.artista + cancion.duracion +  " min" + "\n")            
+            playlistArchivo = open(file_name_playlist, 'a')         
+            playlistArchivo.write(cancion.nombre + " - " + cancion.artista)            
             playlistArchivo.close()
             # Actualiza las listas en MainWindow
             generos[self.ui.genComboBox.currentIndex()].genero.asignar_playlist()        
             self.limpiarForm()        
             self.ui.statusbar.showMessage("Canción agregada exitosamente")
 
-        except:
-            self.ui.statusbar.showMessage("Error al añadir la canción")
+        # except:
+        #     self.ui.statusbar.showMessage("Error al añadir la canción")
 
     def asignar_artistas(self):
         file_dir = os.path.dirname(os.path.realpath('__file__'))
