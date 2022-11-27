@@ -12,8 +12,7 @@ seleccionGlobal = None
 class ArtistaWindow(QMainWindow):
     def __init__(self, parent=None):
         super(ArtistaWindow, self).__init__(parent)
-        self.ui = ArtistaForm()
-        # self.form = CancionFormWindow().ui
+        self.ui = ArtistaForm()        
         self.ui.setupUi(self)
          # Agrega al genComboBox los 4 géneros
         self.ui.genComboBox.addItems(['Electrónica', 'Jazz', 'Pop', 'Hip-Hop'])
@@ -114,14 +113,15 @@ class CancionFormWindow(QMainWindow):
         super(CancionFormWindow, self).__init__(parent)
         self.ui = Form()
         self.ui.setupUi(self)                                                                   
-        self.ui.addSongBtn.clicked.connect(self.anadir_cancion)        
+        self.ui.addSongBtn.clicked.connect(self.anadir_cancion) 
+        self.ui.clearFormBtn.clicked.connect(self.limpiarForm)       
         # Agrega al genComboBox los 4 géneros
         self.ui.genComboBox.addItems(['Electrónica', 'Jazz', 'Pop', 'Hip-Hop'])
         self.artista = ArtistaWindow(self)
         self.ui.addArtistBtn.clicked.connect(self.openArtistaWindow)        
 
     def anadir_cancion(self):
-        # try:        
+        try:        
             # Guarda en variables info del form
             titulo = self.ui.tituloDeLaCancionLineEdit.text()
             artista = self.ui.artistaComboBox.currentText()
@@ -155,8 +155,8 @@ class CancionFormWindow(QMainWindow):
             self.limpiarForm()        
             self.ui.statusbar.showMessage("Canción agregada exitosamente")
 
-        # except:
-        #     self.ui.statusbar.showMessage("Error al añadir la canción")
+        except:
+            self.ui.statusbar.showMessage("Error al añadir la canción")
 
     def asignar_artistas(self):
         file_dir = os.path.dirname(os.path.realpath('__file__'))
