@@ -71,7 +71,9 @@ class DetallesWindow(QMainWindow):
         
     def setupContenido(self):
         if seleccionGlobal is not None:
-            cancion = seleccionGlobal.split()[0]            
+            selecList = seleccionGlobal.split(" - ")
+            print(selecList)
+            cancion = selecList[0]
             # Pone el título de la canción
             self.ui.songTitleLabel.setText(cancion)                      
             file_dir = os.path.dirname(os.path.realpath('__file__'))
@@ -148,7 +150,7 @@ class CancionFormWindow(QMainWindow):
             # Añade línea al archivo del género elegido
             file_name_playlist = os.path.join(file_dir, f"playlists\{genero}") 
             playlistArchivo = open(file_name_playlist, 'a')         
-            playlistArchivo.write(cancion.nombre + " - " + cancion.artista)            
+            playlistArchivo.write(cancion.nombre + " - " + cancion.artista + "\n")            
             playlistArchivo.close()
             # Actualiza las listas en MainWindow
             generos[self.ui.genComboBox.currentIndex()].genero.asignar_playlist()        
